@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link class="jsbin" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.0/jquery-ui.min.js"></script>
+<meta charset=utf-8 />
+<title>JS Bin</title>
+<!--[if IE]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+<style>
+  article, aside, figure, footer, header, hgroup, 
+  menu, nav, section { display: block; }
+</style>
+</head>
+
+<body>
+  <input type='file' id='chutiya_button' onchange="readURL(this); "/>
+  Click to correctly allign <input type='button' id='file-input' name="Click to correctly allign" alt="Click to correctly allign"   />
+    <img id="blah" src="#"  />
+   <h3>Reset base64 image:</h3>
+<img id="image-reset" src="" / width="200" height="300"> 
+</body>
+<script>
+
+
+
+
+
+
+
+
+
+	
+	     function readURL(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $('#blah')
+                        .attr('src', e.target.result)
+                        .width(150)
+                        .height(200);
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+
+
+
+        function resetOrientation(srcBase64, srcOrientation, callback) {
+  var img = new Image();  
+
+  img.onload = function() {
+    var width = img.width,
+        height = img.height,
+        canvas = document.createElement('canvas'),
+        ctx = canvas.getContext("2d");
+    
+    // set proper canvas dimensions before transform & export
+    if (4 < srcOrientation && srcOrientation < 9) {
+      canvas.width = height;
+      canvas.height = width;
+    } else {
+      canvas.width = width;
+      canvas.height = height;
+    }
+  
+    // transform context before drawing image
+    switch (srcOrientation) {
+      case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
+      case 3: ctx.transform(-1, 0, 0, -1, width, height ); break;
+      case 4: ctx.transform(1, 0, 0, -1, 0, height ); break;
+      case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+      case 6: ctx.transform(0, 1, -1, 0, height , 0); break;
+      case 7: ctx.transform(0, -1, -1, 0, height , width); break;
+      case 8: ctx.transform(0, -1, 1, 0, 0, width); break;
+      default: break;
+    }
+
+    // draw image
+    ctx.drawImage(img, 0, 0);
+
+    // export base64
+    callback(canvas.toDataURL());
+  };
+
+  img.src = srcBase64;
+}
+
+var originalImage = document.getElementById("blah");
+  resetImage = document.getElementById("image-reset");
+
+
+function getOrientation(file, callback) {
+  var reader = new FileReader();
+
+  reader.onload = function(event) {
+    var view = new DataView(event.target.result);
+
+    if (view.getUint16(0, false) != 0xFFD8) return callback(-2);
+
+    var length = view.byteLength,
+        offset = 2;
+
+    while (offset < length) {
+      var marker = view.getUint16(offset, false);
+      offset += 2;
+
+      if (marker == 0xFFE1) {
+        if (view.getUint32(offset += 2, false) != 0x45786966) {
+          return callback(-1);
+        }
+        var little = view.getUint16(offset += 6, false) == 0x4949;
+        offset += view.getUint32(offset + 4, little);
+        var tags = view.getUint16(offset, little);
+        offset += 2;
+
+        for (var i = 0; i < tags; i++)
+          if (view.getUint16(offset + (i * 12), little) == 0x0112)
+            return callback(view.getUint16(offset + (i * 12) + 8, little));
+      }
+      else if ((marker & 0xFF00) != 0xFF00) break;
+      else offset += view.getUint16(offset, false);
+    }
+    return callback(-1);
+  };
+
+  reader.readAsArrayBuffer(file.slice(0, 64 * 1024));
+};
+
+var fileInput = document.getElementById("file-input");
+var chutiyaInput = document.getElementById("chutiya_button");
+
+// fileInput.onchange = function(event) {
+//   
+
+// 	getOrientation(file, function(orientation) {
+//    	alert(orientation);
+//   });
+// };
+
+let file;
+
+fileInput.addEventListener("click", function(){
+     console.log("click ho gya bc");
+     getOrientation(file,function(dekh){
+         console.log("ye hai exif:",dekh);
+         resetOrientation(originalImage.src,dekh, function(resetBase64Image) {
+         resetImage.src = resetBase64Image;
+     });
+     
+});
+});     
+
+
+chutiyaInput.addEventListener("change", function(event){
+     console.log("change ho gya bc");
+     file = event.target.files[0];
+});
+
+
+
+
+
+
+</script>
+</html>
